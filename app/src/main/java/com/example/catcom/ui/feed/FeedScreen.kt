@@ -13,6 +13,7 @@ import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -35,7 +36,8 @@ fun FeedScreen(
     onNavigateToCreatePost: () -> Unit,
     onNavigateToComment: (String) -> Unit,
     onNavigateToInbox: () -> Unit,
-    onNavigateToChat: (String) -> Unit
+    onNavigateToChat: (String) -> Unit,
+    onNavigateToSearch: () -> Unit
 ) {
     val feedState by viewModel.feedState.collectAsState()
     val likedPostIds by viewModel.likedPostIds.collectAsState()
@@ -45,6 +47,9 @@ fun FeedScreen(
             TopAppBar(
                 title = { Text("Catcom") },
                 actions = {
+                    IconButton(onClick = onNavigateToSearch) {
+                        Icon(Icons.Default.Search, contentDescription = "Search")
+                    }
                     IconButton(onClick = onNavigateToInbox) {
                         Icon(Icons.Default.Email, contentDescription = "Inbox")
                     }

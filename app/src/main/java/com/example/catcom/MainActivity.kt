@@ -34,6 +34,7 @@ import com.example.catcom.ui.feed.CreatePostScreen
 import com.example.catcom.ui.feed.FeedScreen
 import com.example.catcom.ui.feed.FeedViewModel
 import com.example.catcom.ui.profile.ProfileScreen
+import com.example.catcom.ui.search.SearchScreen
 import com.example.catcom.ui.theme.CatcomTheme
 import com.google.firebase.auth.FirebaseAuth
 import dagger.hilt.android.AndroidEntryPoint
@@ -163,6 +164,9 @@ class MainActivity : ComponentActivity() {
                                 },
                                 onNavigateToChat = { targetUserId ->
                                     navController.navigate("chat/$targetUserId")
+                                },
+                                onNavigateToSearch = {
+                                    navController.navigate("search")
                                 }
                             )
                         }
@@ -182,6 +186,18 @@ class MainActivity : ComponentActivity() {
                             CommentScreen(
                                 onBackClick = {
                                     navController.popBackStack()
+                                }
+                            )
+                        }
+                        
+                        // Route Search
+                        composable("search") {
+                            SearchScreen(
+                                onNavigateToProfile = { userId ->
+                                    navController.navigate("profile/$userId")
+                                },
+                                onNavigateToPostDetail = { postId ->
+                                    navController.navigate("comment/$postId") // Navigasi ke detail/komentar
                                 }
                             )
                         }
