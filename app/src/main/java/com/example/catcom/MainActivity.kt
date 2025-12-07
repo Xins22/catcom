@@ -6,6 +6,7 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material.icons.filled.List
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Pets
@@ -30,6 +31,8 @@ import com.example.catcom.ui.auth.RegisterScreen
 import com.example.catcom.ui.chat.ChatDetailScreen
 import com.example.catcom.ui.chat.ChatListScreen
 import com.example.catcom.ui.comment.CommentScreen
+import com.example.catcom.ui.event.EventFormScreen
+import com.example.catcom.ui.event.EventListScreen
 import com.example.catcom.ui.feed.CreatePostScreen
 import com.example.catcom.ui.feed.FeedScreen
 import com.example.catcom.ui.feed.FeedViewModel
@@ -60,11 +63,9 @@ class MainActivity : ComponentActivity() {
                 val navBackStackEntry by navController.currentBackStackEntryAsState()
                 val currentRoute = navBackStackEntry?.destination?.route
 
-                val mainRoutes = listOf("feed", "adoption_list", "profile/{userId}")
-                
                 // Logic khusus untuk highlight tab Profil di BottomBar
                 val isProfileRoute = currentRoute?.startsWith("profile/") == true
-                val showBottomBar = currentRoute in listOf("feed", "adoption_list") || isProfileRoute
+                val showBottomBar = currentRoute in listOf("feed", "adoption_list", "event_list") || isProfileRoute
 
                 Scaffold(
                     bottomBar = {
@@ -92,6 +93,21 @@ class MainActivity : ComponentActivity() {
                                     selected = currentRoute == "adoption_list",
                                     onClick = {
                                         navController.navigate("adoption_list") {
+                                            popUpTo(navController.graph.findStartDestination().id) {
+                                                saveState = true
+                                            }
+                                            launchSingleTop = true
+                                            restoreState = true
+                                        }
+                                    }
+                                )
+                                // Item Event
+                                NavigationBarItem(
+                                    icon = { Icon(Icons.Default.CalendarToday, contentDescription = "Event") },
+                                    label = { Text("Event") },
+                                    selected = currentRoute == "event_list",
+                                    onClick = {
+                                        navController.navigate("event_list") {
                                             popUpTo(navController.graph.findStartDestination().id) {
                                                 saveState = true
                                             }
@@ -149,14 +165,12 @@ class MainActivity : ComponentActivity() {
                         }
 
                         // --- Feed Routes ---
-                        composable("feed") { // Atau sesuai route name Anda
+                        composable("feed") { 
                             FeedScreen(
                                 onNavigateToCreatePost = { navController.navigate("create_post") },
                                 onNavigateToComment = { postId -> navController.navigate("comment/$postId") },
-                                onNavigateToInbox = { navController.navigate("inbox") }, // Navigasi ke list chat
+                                onNavigateToInbox = { navController.navigate("inbox") },
                                 onNavigateToSearch = { navController.navigate("search") },
-
-                                // BAGIAN PENTING: Arahkan ke route Profile dengan membawa User ID
                                 onNavigateToProfile = { userId ->
                                     navController.navigate("profile/$userId")
                                 }
@@ -189,7 +203,7 @@ class MainActivity : ComponentActivity() {
                                     navController.navigate("profile/$userId")
                                 },
                                 onNavigateToPostDetail = { postId ->
-                                    navController.navigate("comment/$postId") // Navigasi ke detail/komentar
+                                    navController.navigate("comment/$postId")
                                 }
                             )
                         }
@@ -230,6 +244,26 @@ class MainActivity : ComponentActivity() {
                             AdoptionFormScreen(
                                 viewModel = viewModel,
                                 onSuccess = {
+                                    navController.popBackStack()
+                                }
+                            )
+                        }
+
+                        // --- Event Routes ---
+                        composable("event_list") {
+                            EventListScreen(
+                                onNavigateToForm = {
+                                    navController.navigate("event_form")
+                                }
+                            )
+                        }
+
+                        composable("event_form") {
+                            EventFormScreen(
+                                onSuccess = {
+                                    navController.popBackStack()
+                                },
+                                onBackClick = {
                                     navController.popBackStack()
                                 }
                             )
