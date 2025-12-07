@@ -17,6 +17,7 @@ import kotlinx.coroutines.tasks.await
 import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
+import kotlinx.coroutines.launch
 
 @Singleton
 class ChatRepositoryImpl @Inject constructor(
@@ -111,42 +112,63 @@ class ChatRepositoryImpl @Inject constructor(
             emit(Result.Error(e))
         }
     }
-
     override fun getConversations(): Flow<List<Conversation>> = callbackFlow {
         val currentUserId = auth.currentUser?.uid
         if (currentUserId == null) {
-            close(Exception("Not logged in"))
+            close() // Tutup flow jika tidak login
             return@callbackFlow
         }
 
+        // Listener untuk perubahan realtime di daftar chat
         val listenerRegistration = firestore.collection("conversations")
             .whereArrayContains("participants", currentUserId)
-            //.orderBy("lastTimestamp", Query.Direction.DESCENDING) // Memerlukan index composite
             .addSnapshotListener { snapshot, error ->
                 if (error != null) {
-                    // close(error) // Jangan close flow agar UI bisa retry atau handle error state
+                    close(error)
                     return@addSnapshotListener
                 }
 
                 if (snapshot != null) {
-                    val conversations = snapshot.toObjects(Conversation::class.java)
-                    
-                    // Logic tambahan: Isi otherUserId dan otherUserName
-                    // Note: otherUserName memerlukan fetch user data tambahan,
-                    // di sini kita hanya set ID dulu atau nama dummy.
-                    // Idealnya participants menyimpan object {uid, name, photo}
-                    // atau kita fetch user detail terpisah.
-                    
-                    conversations.forEach { conversation ->
-                        val otherId = conversation.participants.find { it != currentUserId } ?: ""
-                        conversation.otherUserId = otherId
-                        conversation.otherUserName = "User $otherId" // Placeholder, perlu fetch user profile
+                    // Gunakan 'launch' (dari ProducerScope) untuk fetch data user secara async
+                    // tanpa memblokir UI thread
+                    launch {
+                        val conversationList = snapshot.documents.mapNotNull { doc ->
+                            val conv = doc.toObject(Conversation::class.java) ?: return@mapNotNull null
+
+                            // 1. Cari ID lawan bicara
+                            val otherId = conv.participants.find { it != currentUserId } ?: ""
+
+                            // 2. Ambil Nama & Foto dari koleksi 'users'
+                            var displayName = "Unknown"
+                            var photoUrl = ""
+
+                            if (otherId.isNotEmpty()) {
+                                try {
+                                    // Fetch dokumen user lawan bicara
+                                    val userSnapshot = firestore.collection("users").document(otherId).get().await()
+                                    displayName = userSnapshot.getString("displayName") ?: "No Name"
+                                    photoUrl = userSnapshot.getString("photoUrl") ?: ""
+                                } catch (e: Exception) {
+                                    e.printStackTrace()
+                                }
+                            }
+
+                            // 3. Update objek conversation dengan data asli
+                            conv.copy(
+                                id = doc.id,
+                                otherUserId = otherId,
+                                otherUserName = displayName,
+                                // Jika di model Conversation ada field photo, set juga disini
+                                // otherUserPhoto = photoUrl
+                            )
+                        }
+
+                        // Sortir manual berdasarkan waktu terbaru
+                        val sortedList = conversationList.sortedByDescending { it.lastTimestamp }
+
+                        // Kirim data yang sudah lengkap ke UI
+                        trySend(sortedList)
                     }
-                    
-                    // Sort manual karena query composite index mungkin belum ada
-                    val sortedConversations = conversations.sortedByDescending { it.lastTimestamp }
-                    
-                    trySend(sortedConversations)
                 }
             }
 
