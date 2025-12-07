@@ -149,24 +149,16 @@ class MainActivity : ComponentActivity() {
                         }
 
                         // --- Feed Routes ---
-                        composable("feed") {
-                            val viewModel = hiltViewModel<FeedViewModel>()
+                        composable("feed") { // Atau sesuai route name Anda
                             FeedScreen(
-                                viewModel = viewModel,
-                                onNavigateToCreatePost = {
-                                    navController.navigate("create_post")
-                                },
-                                onNavigateToComment = { postId ->
-                                    navController.navigate("comment/$postId")
-                                },
-                                onNavigateToInbox = {
-                                    navController.navigate("inbox")
-                                },
-                                onNavigateToChat = { targetUserId ->
-                                    navController.navigate("chat/$targetUserId")
-                                },
-                                onNavigateToSearch = {
-                                    navController.navigate("search")
+                                onNavigateToCreatePost = { navController.navigate("create_post") },
+                                onNavigateToComment = { postId -> navController.navigate("comment/$postId") },
+                                onNavigateToInbox = { navController.navigate("inbox") }, // Navigasi ke list chat
+                                onNavigateToSearch = { navController.navigate("search") },
+
+                                // BAGIAN PENTING: Arahkan ke route Profile dengan membawa User ID
+                                onNavigateToProfile = { userId ->
+                                    navController.navigate("profile/$userId")
                                 }
                             )
                         }

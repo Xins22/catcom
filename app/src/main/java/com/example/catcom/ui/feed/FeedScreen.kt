@@ -6,7 +6,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ChatBubbleOutline
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Email
@@ -36,7 +35,8 @@ fun FeedScreen(
     onNavigateToCreatePost: () -> Unit,
     onNavigateToComment: (String) -> Unit,
     onNavigateToInbox: () -> Unit,
-    onNavigateToChat: (String) -> Unit,
+    // UBAH DISINI: Ganti onNavigateToChat menjadi onNavigateToProfile
+    onNavigateToProfile: (String) -> Unit,
     onNavigateToSearch: () -> Unit
 ) {
     val feedState by viewModel.feedState.collectAsState()
@@ -78,7 +78,8 @@ fun FeedScreen(
                                 isLiked = likedPostIds.contains(post.id),
                                 onLikeClick = { viewModel.onLikeClicked(post) },
                                 onCommentClick = { onNavigateToComment(post.id) },
-                                onUserClick = { onNavigateToChat(post.authorId) }
+                                // Panggil navigasi ke profile, kirim ID penulis postingan
+                                onUserClick = { onNavigateToProfile(post.authorId) }
                             )
                         }
                     }
@@ -113,9 +114,8 @@ fun PostItem(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clickable(onClick = onUserClick)
+                    .clickable(onClick = onUserClick) // Area klik header
             ) {
-                // Placeholder Avatar jika photoUrl kosong
                 if (post.authorPhoto.isNotEmpty()) {
                     AsyncImage(
                         model = post.authorPhoto,
@@ -134,11 +134,13 @@ fun PostItem(
                             .clip(CircleShape)
                     )
                 }
-                
+
                 Spacer(modifier = Modifier.width(8.dp))
-                
+
+                // Menampilkan Nama Akun
+                // Pastikan saat createPost, field authorName diisi dengan user.displayName
                 Text(
-                    text = post.authorName,
+                    text = post.authorName.ifEmpty { "Pengguna Catcom" },
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold
                 )
@@ -169,7 +171,7 @@ fun PostItem(
                 Spacer(modifier = Modifier.height(12.dp))
             }
 
-            // Actions: Like & Comment
+            // Actions
             Row(verticalAlignment = Alignment.CenterVertically) {
                 IconButton(onClick = onLikeClick) {
                     Icon(
