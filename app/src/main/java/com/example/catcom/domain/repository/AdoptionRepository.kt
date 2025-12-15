@@ -8,4 +8,6 @@ interface AdoptionRepository {
     fun submitAdoption(adoption: Adoption): Flow<Result<Boolean>>
     fun getAvailableAdoptions(): Flow<Result<List<Adoption>>>
     fun getUserAdoptions(userId: String): Flow<Result<List<Adoption>>>
+    fun deleteAdoption(adoptionId: String): Flow<Result<Boolean>>
+    fun getAdoptionById(adoptionId: String): Flow<Result<Adoption>>
 }

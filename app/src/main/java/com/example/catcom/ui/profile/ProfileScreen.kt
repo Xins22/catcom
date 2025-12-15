@@ -266,23 +266,40 @@ fun AdoptionListContent(adoptions: List<Adoption>) {
                             .padding(8.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        AsyncImage(
-                            model = adoption.images.firstOrNull() ?: "",
-                            contentDescription = null,
-                            modifier = Modifier
-                                .size(60.dp)
-                                .clip(MaterialTheme.shapes.small),
-                            contentScale = ContentScale.Crop
-                        )
+                        // Perbaikan: gunakan logic yang sama dengan DetailScreen
+                        val imageUrl = adoption.images.firstOrNull() ?: ""
+                        
+                        if (imageUrl.isNotEmpty()) {
+                            AsyncImage(
+                                model = imageUrl,
+                                contentDescription = null,
+                                modifier = Modifier
+                                    .size(60.dp)
+                                    .clip(MaterialTheme.shapes.small),
+                                contentScale = ContentScale.Crop
+                            )
+                        } else {
+                            Box(
+                                modifier = Modifier
+                                    .size(60.dp)
+                                    .clip(MaterialTheme.shapes.small)
+                                    .background(Color.LightGray),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(Icons.Default.Person, contentDescription = null, tint = Color.White)
+                            }
+                        }
+                        
                         Spacer(modifier = Modifier.width(16.dp))
                         Column {
+                            // Perbaikan: gunakan petName dan petBreed sesuai Model
                             Text(
                                 text = adoption.petName,
                                 style = MaterialTheme.typography.titleMedium,
                                 fontWeight = FontWeight.Bold
                             )
                             Text(
-                                text = "${adoption.petBreed} • ${adoption.age} bulan",
+                                text = "${adoption.petBreed} • ${adoption.age}",
                                 style = MaterialTheme.typography.bodySmall
                             )
                         }

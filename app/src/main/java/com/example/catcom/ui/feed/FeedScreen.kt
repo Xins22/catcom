@@ -35,7 +35,6 @@ fun FeedScreen(
     onNavigateToCreatePost: () -> Unit,
     onNavigateToComment: (String) -> Unit,
     onNavigateToInbox: () -> Unit,
-    // UBAH DISINI: Ganti onNavigateToChat menjadi onNavigateToProfile
     onNavigateToProfile: (String) -> Unit,
     onNavigateToSearch: () -> Unit
 ) {
@@ -78,7 +77,6 @@ fun FeedScreen(
                                 isLiked = likedPostIds.contains(post.id),
                                 onLikeClick = { viewModel.onLikeClicked(post) },
                                 onCommentClick = { onNavigateToComment(post.id) },
-                                // Panggil navigasi ke profile, kirim ID penulis postingan
                                 onUserClick = { onNavigateToProfile(post.authorId) }
                             )
                         }
@@ -114,8 +112,9 @@ fun PostItem(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clickable(onClick = onUserClick) // Area klik header
+                    .clickable(onClick = onUserClick)
             ) {
+                // Placeholder Avatar jika photoUrl kosong
                 if (post.authorPhoto.isNotEmpty()) {
                     AsyncImage(
                         model = post.authorPhoto,
@@ -134,13 +133,11 @@ fun PostItem(
                             .clip(CircleShape)
                     )
                 }
-
+                
                 Spacer(modifier = Modifier.width(8.dp))
-
-                // Menampilkan Nama Akun
-                // Pastikan saat createPost, field authorName diisi dengan user.displayName
+                
                 Text(
-                    text = post.authorName.ifEmpty { "Pengguna Catcom" },
+                    text = post.authorName,
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold
                 )
@@ -171,7 +168,7 @@ fun PostItem(
                 Spacer(modifier = Modifier.height(12.dp))
             }
 
-            // Actions
+            // Actions: Like & Comment
             Row(verticalAlignment = Alignment.CenterVertically) {
                 IconButton(onClick = onLikeClick) {
                     Icon(

@@ -23,6 +23,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import com.example.catcom.ui.adoption.AdoptionDetailScreen
 import com.example.catcom.ui.adoption.AdoptionFormScreen
 import com.example.catcom.ui.adoption.AdoptionListScreen
 import com.example.catcom.ui.adoption.AdoptionViewModel
@@ -235,6 +236,9 @@ class MainActivity : ComponentActivity() {
                                 viewModel = viewModel,
                                 onNavigateToForm = {
                                     navController.navigate("adoption_form")
+                                },
+                                onItemClick = { adoptionId ->
+                                    navController.navigate("adoption_detail/$adoptionId")
                                 }
                             )
                         }
@@ -244,6 +248,25 @@ class MainActivity : ComponentActivity() {
                             AdoptionFormScreen(
                                 viewModel = viewModel,
                                 onSuccess = {
+                                    navController.popBackStack()
+                                }
+                            )
+                        }
+                        
+                        composable("adoption_detail/{adoptionId}") { backStackEntry ->
+                            val adoptionId = backStackEntry.arguments?.getString("adoptionId") ?: ""
+                            val viewModel = hiltViewModel<AdoptionViewModel>() // Share instance if possible or create new. Hilt handles scope.
+                            // Better practice: scoped to nav graph, but here we just instantiate for simplicity
+                            // Note: If you want shared ViewModel between list and detail, use navigation graph scoped ViewModel.
+                            // For now, new instance but detail screen calls loadAdoptionDetail.
+                            
+                            AdoptionDetailScreen(
+                                adoptionId = adoptionId,
+                                viewModel = viewModel,
+                                onContactOwner = { ownerId ->
+                                    navController.navigate("chat/$ownerId")
+                                },
+                                onBack = {
                                     navController.popBackStack()
                                 }
                             )

@@ -1,14 +1,12 @@
 package com.example.catcom.ui.event
 
 import android.app.DatePickerDialog
-import android.content.Context
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
@@ -50,7 +48,7 @@ fun EventFormScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Buat Event Baru") },
+                title = { Text("Buat Kegiatan Baru") },
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
                         Icon(Icons.Default.ArrowBack, contentDescription = "Kembali")
@@ -73,7 +71,7 @@ fun EventFormScreen(
                 OutlinedTextField(
                     value = title,
                     onValueChange = { title = it },
-                    label = { Text("Judul Event") },
+                    label = { Text("Judul Kegiatan") },
                     modifier = Modifier.fillMaxWidth()
                 )
 
@@ -111,10 +109,9 @@ fun EventFormScreen(
                         if (title.isNotBlank() && description.isNotBlank() && location.isNotBlank()) {
                             viewModel.createEvent(
                                 title = title,
-                                desc = description,
+                                description = description,
                                 location = location,
-                                date = dateInMillis,
-                                imageUri = null, // Belum support upload gambar event di form ini
+                                dateLong = dateInMillis,
                                 onSuccess = onSuccess
                             )
                         }
@@ -128,7 +125,7 @@ fun EventFormScreen(
                             color = MaterialTheme.colorScheme.onPrimary
                         )
                     } else {
-                        Text("Simpan Event")
+                        Text("Simpan")
                     }
                 }
 

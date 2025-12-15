@@ -7,18 +7,23 @@ import com.example.catcom.common.Result
 import com.example.catcom.domain.model.Event
 import com.example.catcom.domain.repository.AuthRepository
 import com.example.catcom.domain.repository.EventRepository
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.tasks.await
 import java.util.UUID
 import javax.inject.Inject
 
 @HiltViewModel
 class EventViewModel @Inject constructor(
     private val eventRepository: EventRepository,
-    private val authRepository: AuthRepository
+    private val authRepository: AuthRepository,
+    private val auth: FirebaseAuth,
+    private val firestore: FirebaseFirestore
 ) : ViewModel() {
 
     private val _events = MutableStateFlow<List<Event>>(emptyList())
@@ -39,35 +44,20 @@ class EventViewModel @Inject constructor(
     }
 
     private fun checkUserRole() {
-        // Implementasi sederhana untuk cek role. 
-        // Idealnya, ambil data user dari repository dan cek role-nya.
-        // Untuk saat ini, kita bisa asumsikan semua user bisa melihat event,
-        // tapi hanya admin yang bisa membuat (jika ada logic role di user).
-        
-        // Mengingat belum ada fungsi spesifik getUser di AuthRepository yang return User object langsung 
-        // dengan role (hanya searchUsers dan current auth user), kita akan perlu menambahkannya atau
-        // menggunakan yang ada.
-        
-        // Karena di prompt diminta "Ambil dari data user di AuthRepository/Firestore",
-        // Mari kita coba ambil user profile jika memungkinkan atau cek currentUser
-        
-        // Disini kita akan default false dulu, nanti bisa diupdate jika AuthRepository punya fungsi getUserProfile
-        // Jika AuthRepository belum punya fungsi getCurrentUserProfile yang return domain.model.User,
-        // kita mungkin perlu logic tambahan. 
-        
-        // Namun, jika kita lihat `AuthRepositoryImpl`, belum ada fungsi `getUserProfile(uid)`.
-        // Tapi kita bisa gunakan `searchUsers` atau menambah fungsi baru.
-        // Agar tidak mengubah repository terlalu banyak tanpa instruksi, kita cek auth status saja dulu.
-        
-        // Sesuai prompt: "Inject AuthRepository (untuk cek role user)". 
-        // Mari kita asumsikan kita perlu mengambil data user saat ini.
-        
-        // TODO: Implementasi pengecekan role yang lebih robust.
-        // Saat ini kita set true untuk mempermudah testing pembuatan event, atau false.
-        // Kita akan coba ambil data user jika memungkinkan.
-        
-        // Untuk mock sementara:
-        _isAdmin.value = true // Ubah ini sesuai kebutuhan logic role sebenarnya
+        val currentUser = auth.currentUser
+        if (currentUser != null) {
+            viewModelScope.launch {
+                try {
+                    val document = firestore.collection("users").document(currentUser.uid).get().await()
+                    val role = document.getString("role")
+                    _isAdmin.value = role == "admin"
+                } catch (e: Exception) {
+                    _isAdmin.value = false
+                }
+            }
+        } else {
+            _isAdmin.value = false
+        }
     }
 
     fun loadEvents() {
@@ -88,19 +78,25 @@ class EventViewModel @Inject constructor(
         }
     }
 
-    fun createEvent(title: String, desc: String, location: String, date: Long, imageUri: Uri?, onSuccess: () -> Unit) {
+    fun createEvent(title: String, description: String, location: String, dateLong: Long, onSuccess: () -> Unit) {
+        val currentUser = auth.currentUser
+        if (currentUser == null) {
+            _errorMessage.value = "User not logged in"
+            return
+        }
+        
         val newEvent = Event(
             id = UUID.randomUUID().toString(),
             title = title,
-            description = desc,
+            description = description,
             location = location,
-            date = date,
-            imageUrl = "", // Akan diisi di repository jika ada upload
-            organizerId = "" // Bisa diisi repository atau ambil current user ID disini
+            date = dateLong,
+            imageUrl = "", // Default empty or upload logic if needed
+            organizerId = currentUser.uid
         )
 
         viewModelScope.launch {
-            eventRepository.createEvent(newEvent, imageUri).collect { result ->
+            eventRepository.createEvent(newEvent, null).collect { result ->
                 when (result) {
                     is Result.Loading -> _isLoading.value = true
                     is Result.Success -> {
@@ -123,8 +119,7 @@ class EventViewModel @Inject constructor(
                     is Result.Loading -> _isLoading.value = true
                     is Result.Success -> {
                         _isLoading.value = false
-                        // Refresh list or remove locally
-                        // loadEvents() biasanya auto-update karena Flow, tapi jika tidak, panggil loadEvents()
+                        // List usually updates automatically via Flow
                     }
                     is Result.Error -> {
                         _isLoading.value = false

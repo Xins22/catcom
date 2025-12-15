@@ -1,5 +1,6 @@
 package com.example.catcom.ui.adoption
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -13,14 +14,15 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.example.catcom.common.Result
+import com.example.catcom.common.Result 
 import com.example.catcom.domain.model.Adoption
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AdoptionListScreen(
     viewModel: AdoptionViewModel = hiltViewModel(),
-    onNavigateToForm: () -> Unit
+    onNavigateToForm: () -> Unit,
+    onItemClick: (String) -> Unit = {}
 ) {
     val adoptionsState by viewModel.adoptions.collectAsState()
 
@@ -41,28 +43,9 @@ fun AdoptionListScreen(
         ) {
             when (val state = adoptionsState) {
                 is Result.Loading -> {
-                    CircularProgressIndicator(
-                        modifier = Modifier.align(Alignment.Center)
-                    )
+                    CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
                 }
-                is Result.Success -> {
-                    val adoptions = state.data
-                    if (adoptions.isEmpty()) {
-                        Text(
-                            text = "No adoptions available yet.",
-                            modifier = Modifier.align(Alignment.Center)
-                        )
-                    } else {
-                        LazyColumn(
-                            contentPadding = PaddingValues(16.dp),
-                            verticalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            items(adoptions) { adoption ->
-                                AdoptionItem(adoption = adoption)
-                            }
-                        }
-                    }
-                }
+
                 is Result.Error -> {
                     Text(
                         text = "Error: ${state.exception.message}",
@@ -72,15 +55,43 @@ fun AdoptionListScreen(
                             .padding(16.dp)
                     )
                 }
+
+                is Result.Success -> {
+                    val adoptionList = state.data
+
+                    if (adoptionList.isEmpty()) {
+                        Text(
+                            text = "No adoptions available yet.",
+                            modifier = Modifier.align(Alignment.Center)
+                        )
+                    } else {
+                        LazyColumn(
+                            contentPadding = PaddingValues(16.dp),
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            items(adoptionList) { adoption ->
+                                AdoptionItem(
+                                    adoption = adoption,
+                                    onClick = { onItemClick(adoption.id) }
+                                )
+                            }
+                        }
+                    }
+                }
             }
         }
     }
 }
 
 @Composable
-fun AdoptionItem(adoption: Adoption) {
+fun AdoptionItem(
+    adoption: Adoption,
+    onClick: () -> Unit
+) {
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Column(
@@ -88,21 +99,21 @@ fun AdoptionItem(adoption: Adoption) {
                 .padding(16.dp)
         ) {
             Text(
-                text = adoption.petName,
+                text = adoption.petName, // Updated field name
                 style = MaterialTheme.typography.titleMedium
             )
             Spacer(modifier = Modifier.height(4.dp))
             Text(
-                text = "Breed: ${adoption.petBreed}",
+                text = "Breed: ${adoption.petBreed}", // Updated field name
                 style = MaterialTheme.typography.bodyMedium
             )
             Spacer(modifier = Modifier.height(4.dp))
             Text(
                 text = "Status: ${adoption.status}",
                 style = MaterialTheme.typography.labelSmall,
-                color = if (adoption.status == "available") 
-                    MaterialTheme.colorScheme.primary 
-                else 
+                color = if (adoption.status.lowercase() == "available")
+                    MaterialTheme.colorScheme.primary
+                else
                     MaterialTheme.colorScheme.secondary
             )
         }
